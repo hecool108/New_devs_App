@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Any, List
+from app.core.database_pool import db_pool
 
 async def calculate_monthly_revenue(property_id: str, month: int, year: int, db_session=None) -> Decimal:
     """
@@ -36,13 +37,10 @@ async def calculate_total_revenue(property_id: str, tenant_id: str) -> Dict[str,
     Aggregates revenue from database.
     """
     try:
-        # Import database pool
-        from app.core.database_pool import DatabasePool
-        
-        # Initialize pool if needed
-        db_pool = DatabasePool()
-        await db_pool.initialize()
-        
+        # Use the shared global pool instead of creating a new one per request
+        if not db_pool.session_factory:
+            await db_pool.initialize()
+
         if db_pool.session_factory:
             async with db_pool.get_session() as session:
                 # Use SQLAlchemy text for raw SQL
